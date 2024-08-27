@@ -43,7 +43,7 @@ def close_alert(uNumber, type):
 
 def search_alert(uNumber, type, data=None):
     """Ищет алерт по uNumber, type и data"""
-    query = session.query(Alert).filter_by(uNumber=uNumber, type=type)
+    query = session.query(Alert).filter_by(uNumber=uNumber, type=type, status=0)
     if data:
         query = query.filter(Alert.data.like(f"%{data}%"))
     return query.first()
@@ -132,7 +132,7 @@ def process_transports():
 
 
 # Расписание задач
-schedule.every(10).minutes.do(process_transports)  # Выполнять update_db() каждую минуту
+schedule.every(5).minutes.do(process_transports)  # Выполнять process_transports() каждые 5 минут
 
 if __name__ == "__main__":
     print("Запуск планировщика задач...")
