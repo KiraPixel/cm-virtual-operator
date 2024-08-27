@@ -1,4 +1,4 @@
-from math import radians, sin, cos, sqrt, atan2
+from math import radians, sin, cos, sqrt, atan2, ceil
 
 
 def calculate_distance(coord1, coord2):
@@ -21,9 +21,6 @@ def calculate_distance(coord1, coord2):
     a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     distance = R * c
-    return distance
+    distance = ceil(distance)
 
-coord1 = 55.941490, 37.348750
-coord2 = 55.824655, 37.502760
-x = calculate_distance(coord1, coord2)
-print(x)
+    return distance
