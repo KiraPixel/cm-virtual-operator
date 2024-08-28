@@ -56,7 +56,10 @@ def process_wialon(uNumber, transport_cord):
     if not wialon:
         if not equipment_alert:
             create_alert(uNumber, 'no_equipment', 'Wialon')
-            return
+
+        close_alert(uNumber, 'distance')
+        close_alert(uNumber, 'gps')
+        close_alert(uNumber, 'not_work')
         return
 
     # Сохранение данных wialon
@@ -106,6 +109,8 @@ def process_wialon(uNumber, transport_cord):
         else:
             if danger_alert:
                 close_alert(uNumber, 'danger')
+    else:
+        close_alert(uNumber, 'distance')
 
 
 def process_transports():
