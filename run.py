@@ -2,7 +2,6 @@ import sys
 import time
 
 import schedule
-from tqdm import tqdm
 from models import create_session, get_engine, Transport, Alert, CashWialon
 from location_module import calculate_distance
 from system_status_manager import get_status as get_db_status
@@ -64,7 +63,7 @@ def process_wialon(uNumber, transport_cord):
 
     # Сохранение данных wialon
     pos_x, pos_y, last_time = wialon.pos_x, wialon.pos_y, wialon.last_time
-    wialon_cords = pos_x, pos_y
+    wialon_cords = pos_y, pos_x
 
     # Чекаем есть ли алерты
     gps_alert = search_alert(uNumber, 'gps', 'Wialon')
@@ -107,8 +106,7 @@ def process_wialon(uNumber, transport_cord):
             else:
                 alert_update(uNumber, 'distance', distance)  # Обновление дистанции в алерте
         else:
-            if danger_alert:
-                close_alert(uNumber, 'danger')
+            close_alert(uNumber, 'distance')
     else:
         close_alert(uNumber, 'distance')
 
@@ -121,13 +119,13 @@ def process_transports():
     print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     start_time = time.time()
 
-    for transport in tqdm(transports, desc=f"Обработка транспортных средств", unit="тс"):
+    for transport in transports:
         while get_db_status('db') == 1:
             time.sleep(1)
         uNumber = transport.uNumber
         transport_cord = None
         if transport.x != 0 and transport.y != 0:
-            transport_cord = transport.y, transport.x  # переворачиваем корды, ибо это баг виалона
+            transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона
 
         process_wialon(uNumber, transport_cord)
 
@@ -144,3 +142,4 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)  # Задержка, чтобы не перегружать процессор
+
