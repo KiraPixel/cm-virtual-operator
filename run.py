@@ -138,6 +138,7 @@ def process_transports():
 schedule.every(5).minutes.do(process_transports)  # Выполнять process_transports() каждые 5 минут
 
 if __name__ == "__main__":
+    process_transports()
     print("Запуск планировщика задач...")
     while True:
         schedule.run_pending()
