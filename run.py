@@ -84,7 +84,7 @@ def process_wialon(uNumber, transport_cord):
 
 
     # блок дистанции
-    if transport_cord is not None:
+    if transport_cord is None:
         close_alert(uNumber, 'distance')
         return
 
@@ -113,6 +113,7 @@ def process_transports():
             time.sleep(1)
         uNumber = transport.uNumber
         transport_cord = None
+
         if transport.x != 0 and transport.y != 0:
             transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона
 
