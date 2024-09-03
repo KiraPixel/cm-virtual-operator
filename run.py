@@ -57,11 +57,10 @@ def process_wialon(uNumber, transport_cord):
     wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
 
     if not wialon:
-        create_alert(uNumber, 'no_equipment', 'Wialon')
         close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
         if not search_alert(uNumber, 'no_equipment'):
-            close_alert(uNumber, 'not_work')
+            create_alert(uNumber, 'not_work', 'Wialon')
         return
 
     close_alert(uNumber, 'no_equipment')
