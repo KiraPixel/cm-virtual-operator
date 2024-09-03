@@ -61,6 +61,7 @@ def process_wialon(uNumber, transport_cord):
         close_alert(uNumber, 'not_work')
         return
 
+    close_alert(uNumber, 'no_equipment')
     # Сохранение данных wialon
     pos_x, pos_y, last_time = wialon.pos_x, wialon.pos_y, wialon.last_time
     wialon_cords = pos_y, pos_x
