@@ -60,7 +60,7 @@ def process_wialon(uNumber, transport_cord):
         create_alert(uNumber, 'no_equipment', 'Wialon')
         close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
-        if search_alert(uNumber, 'no_equipment'):
+        if not search_alert(uNumber, 'no_equipment'):
             close_alert(uNumber, 'not_work')
         return
 
