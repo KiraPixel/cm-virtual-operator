@@ -50,64 +50,52 @@ def search_alert(uNumber, type, data=None):
 
 def process_wialon(uNumber, transport_cord):
     """отрабатываем часть wialon"""
-    wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
-    equipment_alert = search_alert(uNumber, 'no_equipment', 'Wialon')
-    if not wialon:
-        if not equipment_alert:
-            create_alert(uNumber, 'no_equipment', 'Wialon')
 
+    while get_db_status('db') == 1:
+        time.sleep(1)
+
+    wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
+
+    if not wialon:
+        create_alert(uNumber, 'no_equipment', 'Wialon')
         close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
         close_alert(uNumber, 'not_work')
         return
 
     close_alert(uNumber, 'no_equipment')
-    # Сохранение данных wialon
-    pos_x, pos_y, last_time = wialon.pos_x, wialon.pos_y, wialon.last_time
-    wialon_cords = pos_y, pos_x
 
-    # Чекаем есть ли алерты
-    gps_alert = search_alert(uNumber, 'gps', 'Wialon')
-    not_work_alert = search_alert(uNumber, 'not_work', 'Wialon')
-    danger_alert = search_alert(uNumber, 'distance')
-
-    # накидываем тригеры
-    trigger_pos = False
-    trigger_not_work = False
-    #накидываем тригеры
-    if pos_x == 0 or pos_y == 0:
-        trigger_pos = True
-    if time.time() - last_time > 48 * 3600:
-        trigger_not_work = True
-
-    # создаем или закрываем алерт по позиции
-    if trigger_pos and not gps_alert:
-        create_alert(uNumber, 'gps', 'Wialon')
-    elif not trigger_pos and gps_alert:
+    if time.time() - wialon.last_time > 48 * 3600 or wialon.last_time == 0:
+        close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
-
-    # создаем или закрываем алерт по работе оборудования
-    if trigger_not_work and not not_work_alert:
-        create_alert(uNumber, 'not_work', 'Wialon')
-    elif not trigger_not_work and not_work_alert:
+        if not search_alert(uNumber,"not_work"):
+            create_alert(uNumber, 'not_work', 'Wialon')
+        return
+    else:
         close_alert(uNumber, 'not_work')
 
-    # закрываем алерт на дистанцию, если, что-то не работает
-    if trigger_pos or trigger_not_work:
+    if wialon.pos_y == 0 or wialon.pos_x == 0:
+        close_alert(uNumber, 'distance')
+        if not search_alert(uNumber,"gps"):
+            create_alert(uNumber, 'gps', 'Wialon')
+        return
+    else:
+        close_alert(uNumber, 'gps')
+
+
+    # блок дистанции
+    if transport_cord is not None:
         close_alert(uNumber, 'distance')
         return
 
-    # блок дистанции
     danger_distance = 5  # дистанция в км, которую мы считаем опасной
-    if transport_cord is not None:
-        distance = calculate_distance(transport_cord, wialon_cords)
-        if distance >= danger_distance:
-            if not danger_alert:
-                create_alert(uNumber, 'distance', distance)
-            else:
-                alert_update(uNumber, 'distance', distance)  # Обновление дистанции в алерте
+    wialon_cords = wialon.pos_y, wialon.pos_x
+    distance = calculate_distance(transport_cord, wialon_cords)
+    if distance >= danger_distance:
+        if not search_alert(uNumber, 'distance'):
+            create_alert(uNumber, 'distance', distance)
         else:
-            close_alert(uNumber, 'distance')
+            alert_update(uNumber, 'distance', distance)  # Обновление дистанции в алерте
     else:
         close_alert(uNumber, 'distance')
 
