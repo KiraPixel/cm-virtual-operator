@@ -48,6 +48,31 @@ def search_alert(uNumber, type, data=None):
     return query.first()
 
 
+def close_invalid_alerts():
+    """Закрывает алерты, если uNumber не существует в таблице Transport."""
+    # Получаем все уникальные uNumber из таблицы Alert, где статус 0 (алерт открыт)
+    open_alerts = session.query(Alert.uNumber).filter_by(status=0).distinct().all()
+    open_alerts_numbers = [alert.uNumber for alert in open_alerts]
+
+    # Получаем все существующие uNumber из таблицы Transport
+    existing_transports = session.query(Transport.uNumber).distinct().all()
+    existing_transport_numbers = [transport.uNumber for transport in existing_transports]
+
+    # Проверяем, какие uNumber отсутствуют в таблице Transport
+    invalid_uNumbers = set(open_alerts_numbers) - set(existing_transport_numbers)
+
+    if invalid_uNumbers:
+        # Закрываем алерты для отсутствующих uNumber
+        for uNumber in invalid_uNumbers:
+            alerts_to_close = session.query(Alert).filter_by(uNumber=uNumber, status=0).all()
+            for alert in alerts_to_close:
+                alert.status = 1
+            session.commit()
+        print(f"Закрыто {len(invalid_uNumbers)} алертов для несуществующих uNumber.")
+    else:
+        print("Нет алертов для закрытия.")
+
+
 def process_wialon(uNumber, transport_cord):
     """отрабатываем часть wialon"""
 
@@ -107,6 +132,8 @@ def process_transports():
 
     print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     start_time = time.time()
+    if get_db_status('db') != 1:
+        close_invalid_alerts()
 
     for transport in transports:
         while get_db_status('db') == 1:
