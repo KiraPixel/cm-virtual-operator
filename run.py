@@ -2,7 +2,7 @@ import sys
 import time
 
 import schedule
-from models import create_session, get_engine, Transport, Alert, CashWialon
+from models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage
 from location_module import calculate_distance
 from system_status_manager import get_status as get_db_status
 
@@ -73,20 +73,25 @@ def close_invalid_alerts():
         print("Нет алертов для закрытия.")
 
 
-def process_wialon(uNumber, transport_cord):
+def process_wialon(uNumber, transport_cord, disable_virtual_operator, ignored_storages):
     """отрабатываем часть wialon"""
 
     while get_db_status('db') == 1:
         time.sleep(1)
 
     wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
-
+    if disable_virtual_operator == 1:
+        close_alert(uNumber, 'distance')
+        close_alert(uNumber, 'gps')
+        close_alert(uNumber, 'no_equipment')
+        return
     if not wialon:
         close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
         if not search_alert(uNumber, 'no_equipment'):
             create_alert(uNumber, 'no_equipment', 'Wialon')
         return
+
 
     close_alert(uNumber, 'no_equipment')
 
@@ -117,6 +122,12 @@ def process_wialon(uNumber, transport_cord):
     wialon_cords = wialon.pos_y, wialon.pos_x
     distance = calculate_distance(transport_cord, wialon_cords)
     if distance >= danger_distance:
+        for storage in ignored_storages:
+            storage_cords = (storage.pos_y, storage.pos_x)
+            distance_to_storage = calculate_distance(storage_cords, wialon_cords)
+            if distance_to_storage <= storage.radius:
+                close_alert(uNumber, 'distance')
+                return
         if not search_alert(uNumber, 'distance'):
             create_alert(uNumber, 'distance', distance)
         else:
@@ -129,6 +140,7 @@ def process_transports():
     """Основная функция для обработки данных транспортных средств"""
     # Получаем все транспортные средства
     transports = session.query(Transport).all()
+    ignored_storages = session.query(IgnoredStorage).all()
 
     print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     start_time = time.time()
@@ -139,12 +151,13 @@ def process_transports():
         while get_db_status('db') == 1:
             time.sleep(1)
         uNumber = transport.uNumber
+        disable_virtual_operator = transport.disable_virtual_operator
         transport_cord = None
 
         if transport.x != 0 and transport.y != 0:
             transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона
 
-        process_wialon(uNumber, transport_cord)
+        process_wialon(uNumber, transport_cord, disable_virtual_operator, ignored_storages)
 
     end_time = time.time()
     print("\nОбработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))

@@ -16,6 +16,7 @@ class Transport(Base):
     equipment = Column(JSON)
     x = Column(Float)
     y = Column(Float)
+    disable_virtual_operator = Column(Integer)
 
     def __repr__(self):
         return f'<Transport {self.uNumber}>'
@@ -66,6 +67,16 @@ class CashWialon(Base):
     __table_args__ = (
         Index('idx_cash_wialon_nm', 'nm'),
     )
+
+
+class IgnoredStorage(Base):
+    __tablename__ = 'ignored_storage'
+    id = Column(Integer, primary_key=True)
+    named = Column(Text, nullable=False)
+    pos_x = Column(Float, nullable=False)
+    pos_y = Column(Float, nullable=False)
+    radius = Column(Integer, nullable=False)
+
 
 # Индекс для поля uNumber в Transport
 Index('idx_transport_unumber', Transport.uNumber)
