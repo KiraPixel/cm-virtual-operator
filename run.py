@@ -123,7 +123,7 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, ignored_st
     distance = calculate_distance(transport_cord, wialon_cords)
     if distance >= danger_distance:
         for storage in ignored_storages:
-            storage_cords = (storage.pos_y, storage.pos_x)
+            storage_cords = (storage.pos_x, storage.pos_y)
             distance_to_storage = calculate_distance(storage_cords, wialon_cords)
             if distance_to_storage <= storage.radius:
                 close_alert(uNumber, 'distance')
