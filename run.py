@@ -156,6 +156,8 @@ def process_transports():
 
         if transport.x != 0 and transport.y != 0:
             transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона
+        if transport.x is None or Transport.y is None:
+            transport_cord = None
 
         process_wialon(uNumber, transport_cord, disable_virtual_operator, ignored_storages)
 
