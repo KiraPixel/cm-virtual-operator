@@ -1,9 +1,9 @@
 import requests
 
-url = 'http://cm.lk-sp.ru/api/health'
+url = 'http://192.168.201.140:5000/api/health'
 
 # Делаем запрос с отключенной проверкой SSL
-response = requests.get(url, headers={'accept': 'application/json'}, verify=False)
+response = requests.get(url, headers={'accept': 'application/json'})
 
 def get_cm_health():
     if response.status_code == 200:
