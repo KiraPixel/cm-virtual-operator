@@ -73,7 +73,7 @@ def close_invalid_alerts():
         print("Нет алертов для закрытия.")
 
 
-def process_wialon(uNumber, transport_cord, disable_virtual_operator, ignored_storages):
+def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_1c, ignored_storages):
     """отрабатываем часть wialon"""
 
     while get_db_status('db') == 1:
@@ -113,14 +113,29 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, ignored_st
         close_alert(uNumber, 'gps')
 
 
+    wialon_cords = wialon.pos_y, wialon.pos_x
+    danger_distance = 5  # дистанция в км, которую мы считаем опасной
+    distance = calculate_distance(transport_cord, wialon_cords)
+
     # блок дистанции
     if transport_cord is None:
         close_alert(uNumber, 'distance')
+        if in_parser_1c:
+            in_storage = False
+            for storage in ignored_storages:
+                storage_cords = (storage.pos_x, storage.pos_y)
+                distance_to_storage = calculate_distance(storage_cords, wialon_cords)
+                if distance_to_storage <= storage.radius:
+                    in_storage = True
+            if not in_storage:
+                if not search_alert(uNumber, 'no_docs_cords'):
+                    create_alert(uNumber, 'no_docs_cords', 'no_docs_cords')
+            else:
+                close_alert(uNumber, 'no_docs_cords')
+        else:
+            close_alert(uNumber, 'no_docs_cords')
         return
 
-    danger_distance = 5  # дистанция в км, которую мы считаем опасной
-    wialon_cords = wialon.pos_y, wialon.pos_x
-    distance = calculate_distance(transport_cord, wialon_cords)
     if distance >= danger_distance:
         for storage in ignored_storages:
             storage_cords = (storage.pos_x, storage.pos_y)
@@ -152,6 +167,7 @@ def process_transports():
             time.sleep(1)
         uNumber = transport.uNumber
         disable_virtual_operator = transport.disable_virtual_operator
+        in_parser_1c = transport.parser1
         transport_cord = None
 
         if transport.x != 0 and transport.y != 0:
@@ -159,7 +175,7 @@ def process_transports():
         if transport.x is None or transport.y is None:
             transport_cord = None, None
 
-        process_wialon(uNumber, transport_cord, disable_virtual_operator, ignored_storages)
+        process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_1c, ignored_storages)
 
     end_time = time.time()
     print("\nОбработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
