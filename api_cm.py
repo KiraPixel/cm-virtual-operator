@@ -11,7 +11,6 @@ def get_cm_health():
         all_status_ok = True
         for module, info in data.items():
             status = info.get('status')
-            print(f"Статус {module}: {status}")
             if status != 1:
                 all_status_ok = False
                 break
