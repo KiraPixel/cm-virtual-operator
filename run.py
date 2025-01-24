@@ -115,7 +115,6 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
 
     wialon_cords = wialon.pos_y, wialon.pos_x
     danger_distance = 5  # дистанция в км, которую мы считаем опасной
-    distance = calculate_distance(transport_cord, wialon_cords)
 
     # блок дистанции
     if transport_cord is None:
@@ -136,6 +135,7 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
             close_alert(uNumber, 'no_docs_cords')
         return
 
+    distance = calculate_distance(transport_cord, wialon_cords)
     if distance >= danger_distance:
         for storage in ignored_storages:
             storage_cords = (storage.pos_x, storage.pos_y)
