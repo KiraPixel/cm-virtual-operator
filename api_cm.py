@@ -1,6 +1,6 @@
 import requests
 
-url = 'https://cm.lk-sp.ru/api/health'
+url = 'http://cm.lk-sp.ru/api/health'
 
 # Делаем запрос с отключенной проверкой SSL
 response = requests.get(url, headers={'accept': 'application/json'}, verify=False)

@@ -160,7 +160,7 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
 def process_transports():
     """Основная функция для обработки данных транспортных средств"""
 
-    if not get_cm_health:
+    if not get_cm_health():
         print("Приложите подорожник к ЦМ")
         print("Фрижу задачу на час")
         time.sleep(600)
