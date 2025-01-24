@@ -167,7 +167,7 @@ def process_transports():
             time.sleep(1)
         uNumber = transport.uNumber
         disable_virtual_operator = transport.disable_virtual_operator
-        in_parser_1c = transport.parser1
+        in_parser_1c = transport.parser_1c
         transport_cord = None
 
         if transport.x != 0 and transport.y != 0:
