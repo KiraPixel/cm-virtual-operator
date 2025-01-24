@@ -17,6 +17,7 @@ class Transport(Base):
     x = Column(Float)
     y = Column(Float)
     disable_virtual_operator = Column(Integer)
+    parsers_1c = Column(Integer)
 
     def __repr__(self):
         return f'<Transport {self.uNumber}>'
