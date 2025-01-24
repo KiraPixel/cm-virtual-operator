@@ -1,16 +1,11 @@
 import requests
 
-# Отправляем GET-запрос
 url = 'https://cm.lk-sp.ru/api/health'
-response = requests.get(url, headers={'accept': 'application/json'})
-
+response = requests.get(url, headers={'accept': 'application/json'}, verify=False)
 
 def get_cm_health():
-    # Проверяем, что запрос успешен
     if response.status_code == 200:
         data = response.json()
-
-        # Проверяем все статусы
         all_status_ok = True
         for module, info in data.items():
             status = info.get('status')
@@ -19,7 +14,5 @@ def get_cm_health():
                 break
         return all_status_ok
     else:
+        print(f"Ошибка запроса: {response.status_code}")
         return False
-
-
-
