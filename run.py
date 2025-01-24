@@ -2,6 +2,8 @@ import sys
 import time
 
 import schedule
+
+from api_cm import get_cm_health
 from models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage
 from location_module import calculate_distance
 from system_status_manager import get_status as get_db_status
@@ -70,7 +72,7 @@ def close_invalid_alerts():
             session.commit()
         print(f"Закрыто {len(invalid_uNumbers)} алертов для несуществующих uNumber.")
     else:
-        print("Нет алертов для закрытия.")
+        print("Нет алертов для закрытия для несуществующих uNumber..")
 
 
 def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_1c, ignored_storages):
@@ -157,6 +159,13 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
 
 def process_transports():
     """Основная функция для обработки данных транспортных средств"""
+
+    if not get_cm_health:
+        print("Приложите подорожник к ЦМ")
+        print("Фрижу задачу на час")
+        time.sleep(600)
+        return
+
     # Получаем все транспортные средства
     transports = session.query(Transport).all()
     ignored_storages = session.query(IgnoredStorage).all()
@@ -190,6 +199,7 @@ def process_transports():
 schedule.every(5).minutes.do(process_transports)  # Выполнять process_transports() каждые 5 минут
 
 if __name__ == "__main__":
+    print("Начинаю работу и запускаю первый прогон")
     process_transports()
     print("Запуск планировщика задач...")
     while True:
