@@ -84,10 +84,14 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
         close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
         close_alert(uNumber, 'no_equipment')
+        close_alert(uNumber, 'no_docs_cords')
+        close_alert(uNumber, 'not_work')
         return
     if not wialon:
         close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
+        close_alert(uNumber, 'no_docs_cords')
+        close_alert(uNumber, 'not_work')
         if not search_alert(uNumber, 'no_equipment'):
             create_alert(uNumber, 'no_equipment', 'Wialon')
         return
