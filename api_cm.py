@@ -10,6 +10,8 @@ def get_cm_health():
         data = response.json()
         all_status_ok = True
         for module, info in data.items():
+            if module == "voperator_module":  # Игнорируем сами себя
+                continue
             status = info.get('status')
             if status != 1:
                 all_status_ok = False
@@ -18,3 +20,7 @@ def get_cm_health():
     else:
         print(f"Ошибка запроса: {response.status_code}")
         return False
+
+# Пример использования
+result = get_cm_health()
+print("Все модули в порядке:", result)
