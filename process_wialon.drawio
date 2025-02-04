@@ -153,7 +153,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="LdiEW79fJLhFNMlzycQx-58" value="Дистанция" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="310" y="740" width="80" height="80" as="geometry" />
+          <mxGeometry x="320" y="740" width="80" height="80" as="geometry" />
         </mxCell>
         <mxCell id="LdiEW79fJLhFNMlzycQx-65" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="LdiEW79fJLhFNMlzycQx-64" target="LdiEW79fJLhFNMlzycQx-66" edge="1">
           <mxGeometry relative="1" as="geometry">
@@ -172,7 +172,7 @@
           <mxGeometry x="575" y="940" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="LdiEW79fJLhFNMlzycQx-74" value="trigger_handler" style="swimlane;whiteSpace=wrap;html=1;" parent="1" vertex="1" collapsed="1">
-          <mxGeometry x="290" y="1060" width="120" height="30" as="geometry">
+          <mxGeometry x="300" y="1060" width="120" height="30" as="geometry">
             <mxRectangle x="250" y="1060" width="200" height="80" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
@@ -195,7 +195,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="LdiEW79fJLhFNMlzycQx-77" value="in_ingored_storage" style="rhombus;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="265" y="850" width="170" height="80" as="geometry" />
+          <mxGeometry x="275" y="850" width="170" height="80" as="geometry" />
         </mxCell>
         <mxCell id="LdiEW79fJLhFNMlzycQx-83" value="Выключаем триггеры" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="10" y="845" width="180" height="90" as="geometry" />
