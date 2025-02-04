@@ -75,88 +75,150 @@ def close_invalid_alerts():
         print("Нет алертов для закрытия для несуществующих uNumber..")
 
 
-def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_1c, ignored_storages):
-    """отрабатываем часть wialon"""
+def trigger_handler(uNumber, trigger_closeAll=False,
+                    trigger_distance=False, trigger_distance_value=None,
+                    trigger_gps=False, trigger_gps_value=None,
+                    trigger_no_equipment=False, trigger_no_equipment_value=None,
+                    trigger_no_docs_cords=False,
+                    trigger_not_work=False, trigger_not_work_value=None):
 
-    while get_db_status('db') == 1:
-        time.sleep(1)
+    # хоть и есть приемники value для триггеров trigger_distance, trigger_no_equipment, trigger_not_work
+    # логика готова только для виалона
+    # в ином случае будет жопа :) sry
 
-    wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
-    if disable_virtual_operator == 1:
+    if trigger_closeAll:
         close_alert(uNumber, 'distance')
         close_alert(uNumber, 'gps')
         close_alert(uNumber, 'no_equipment')
         close_alert(uNumber, 'no_docs_cords')
         close_alert(uNumber, 'not_work')
         return
-    if not wialon:
+
+    # поправляем триггеры
+    if trigger_no_equipment:
+        trigger_distance = False
+        trigger_gps = False
+        trigger_not_work = False
+
+    if trigger_not_work:
+        trigger_distance = False
+        trigger_gps = False
+
+    if trigger_gps:
+        trigger_distance = False
+
+    if trigger_no_docs_cords:
+        trigger_distance = False
+
+    # исполняем триггеры
+    if trigger_distance:
+        if not search_alert(uNumber, 'distance'):
+            if trigger_distance_value:
+                create_alert(uNumber, 'distance', trigger_distance_value)
+    else:
         close_alert(uNumber, 'distance')
+
+    if trigger_gps:
+        if not search_alert(uNumber, 'gps'):
+            if trigger_gps_value:
+                create_alert(uNumber, 'gps', trigger_gps_value)
+    else:
         close_alert(uNumber, 'gps')
-        close_alert(uNumber, 'no_docs_cords')
+
+    if trigger_not_work:
+        if not search_alert(uNumber, 'not_work'):
+            if trigger_not_work_value:
+                create_alert(uNumber, 'not_work', trigger_not_work_value)
+    else:
         close_alert(uNumber, 'not_work')
+
+    if trigger_no_equipment:
         if not search_alert(uNumber, 'no_equipment'):
-            create_alert(uNumber, 'no_equipment', 'Wialon')
-        return
-
-
-    close_alert(uNumber, 'no_equipment')
-
-    if time.time() - wialon.last_time > 48 * 3600 or wialon.last_time == 0:
-        close_alert(uNumber, 'distance')
-        close_alert(uNumber, 'gps')
-        if not search_alert(uNumber,"not_work"):
-            create_alert(uNumber, 'not_work', 'Wialon')
-        return
+            if trigger_no_equipment:
+                create_alert(uNumber, 'no_equipment', trigger_no_equipment_value)
     else:
-        close_alert(uNumber, 'not_work')
+        close_alert(uNumber, 'no_equipment')
 
-    if wialon.pos_y == 0 or wialon.pos_x == 0:
-        close_alert(uNumber, 'distance')
-        if not search_alert(uNumber,"gps"):
-            create_alert(uNumber, 'gps', 'Wialon')
-        return
+    if trigger_no_docs_cords:
+        if not search_alert(uNumber, 'no_docs_cords'):
+            if trigger_no_docs_cords:
+                create_alert(uNumber, 'no_docs_cords', 'no_docs_cords')
     else:
-        close_alert(uNumber, 'gps')
+        close_alert(uNumber, 'no_docs_cords')
 
 
-    wialon_cords = wialon.pos_y, wialon.pos_x
+
+def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_1c, ignored_storages):
+    """отрабатываем часть wialon"""
+
+    trigger_closeAll = False
+    trigger_distance = False
+    trigger_distance_value = None
+    trigger_no_docs_cords = False
+    trigger_gps = False
+    trigger_gps_value = None
+    trigger_no_equipment = False
+    trigger_no_equipment_value = None
+    trigger_not_work = False
+    trigger_not_work_value = None
+
+    in_ignored_storage = False
+
+    while get_db_status('db') == 1:
+        time.sleep(1)
+
+    wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
+    if wialon is not None:
+        wialon_cords = wialon.pos_y, wialon.pos_x
+    else:
+        wialon_cords = None
     danger_distance = 5  # дистанция в км, которую мы считаем опасной
 
-    # блок дистанции
-    if transport_cord is None:
-        close_alert(uNumber, 'distance')
-        if in_parser_1c:
-            in_storage = False
+    if disable_virtual_operator == 1:
+        trigger_closeAll = True
+
+    if not wialon:
+        trigger_no_equipment = True
+        trigger_no_equipment_value = 'Wialon'
+    else:
+
+        if time.time() - wialon.last_time > 72 * 3600 or wialon.last_time == 0:
+                trigger_not_work = True
+                trigger_not_work_value = 'Wialon'
+
+        if wialon.pos_y == 0 or wialon.pos_x == 0:
+            trigger_gps = True
+            trigger_gps_value = 'Wialon'
+        else:
             for storage in ignored_storages:
                 storage_cords = (storage.pos_x, storage.pos_y)
                 distance_to_storage = calculate_distance(storage_cords, wialon_cords)
                 if distance_to_storage <= storage.radius:
-                    in_storage = True
-            if not in_storage:
-                if not search_alert(uNumber, 'no_docs_cords'):
-                    create_alert(uNumber, 'no_docs_cords', 'no_docs_cords')
-            else:
-                close_alert(uNumber, 'no_docs_cords')
-        else:
-            close_alert(uNumber, 'no_docs_cords')
-        return
-    else:
-        close_alert(uNumber, 'no_docs_cords')
+                    in_ignored_storage = True
 
-    distance = calculate_distance(transport_cord, wialon_cords)
-    if distance >= danger_distance:
-        for storage in ignored_storages:
-            storage_cords = (storage.pos_x, storage.pos_y)
-            distance_to_storage = calculate_distance(storage_cords, wialon_cords)
-            if distance_to_storage <= storage.radius:
-                close_alert(uNumber, 'distance')
-                return
-        if not search_alert(uNumber, 'distance'):
-            create_alert(uNumber, 'distance', distance)
-        else:
-            alert_update(uNumber, 'distance', distance)  # Обновление дистанции в алерте
-    else:
-        close_alert(uNumber, 'distance')
+        if transport_cord is None:
+            if in_parser_1c:
+                trigger_no_docs_cords = True
+
+        if transport_cord is not None and wialon_cords is not None:
+            distance = calculate_distance(transport_cord, wialon_cords)
+            if distance > danger_distance:
+                trigger_distance = True
+                trigger_distance_value = danger_distance
+
+    if in_ignored_storage:
+        trigger_distance=False
+        trigger_no_docs_cords=False
+
+    trigger_handler(uNumber,
+                    trigger_closeAll=trigger_closeAll,
+                    trigger_no_equipment=trigger_no_equipment, trigger_no_equipment_value=trigger_no_equipment_value,
+                    trigger_not_work=trigger_not_work, trigger_not_work_value=trigger_not_work_value,
+                    trigger_gps=trigger_gps, trigger_gps_value=trigger_gps_value,
+                    trigger_no_docs_cords=trigger_no_docs_cords,
+                    trigger_distance=trigger_distance, trigger_distance_value=trigger_distance_value)
+
+
 
 
 def process_transports():

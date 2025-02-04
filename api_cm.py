@@ -1,6 +1,8 @@
 import requests
+import os
 
-url = 'http://192.168.201.140:5000/api/health'
+url = os.getenv('CM_INSIDE_HEALTH_URL', 'https://cm.lk-sp.ru/api/health')
+
 
 # Делаем запрос с отключенной проверкой SSL
 response = requests.get(url, headers={'accept': 'application/json'})
