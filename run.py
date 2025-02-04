@@ -140,6 +140,8 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
         else:
             close_alert(uNumber, 'no_docs_cords')
         return
+    else:
+        close_alert(uNumber, 'no_docs_cords')
 
     distance = calculate_distance(transport_cord, wialon_cords)
     if distance >= danger_distance:
