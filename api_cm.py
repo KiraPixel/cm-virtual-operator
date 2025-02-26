@@ -1,7 +1,7 @@
 import requests
 import os
 
-BASE_URL = os.getenv('CM_API_URL', 'https://cm.lk-sp.ru/api/')
+BASE_URL = os.getenv('CM_API_URL', '')
 CM_API_KEY = os.getenv('CM_API_KEY', '')
 
 HEALTH_URL = f"{BASE_URL}health"
