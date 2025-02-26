@@ -1,28 +1,55 @@
 import requests
 import os
 
-url = os.getenv('CM_INSIDE_HEALTH_URL', 'https://cm.lk-sp.ru/api/health')
+BASE_URL = os.getenv('CM_API_URL', 'https://cm.lk-sp.ru/api/')
+CM_API_KEY = os.getenv('CM_API_KEY', '')
 
+HEALTH_URL = f"{BASE_URL}health"
+ADD_CAR_URL = f"{BASE_URL}parser/add_new_car"
 
-# Делаем запрос с отключенной проверкой SSL
-response = requests.get(url, headers={'accept': 'application/json'})
+HEADERS = {
+    'accept': 'application/json',
+    'X-API-KEY': CM_API_KEY
+}
+
+response = requests.get(HEALTH_URL, headers=HEADERS)
+
 
 def get_cm_health():
-    if response.status_code == 200:
-        data = response.json()
-        all_status_ok = True
-        for module, info in data.items():
-            if module == "voperator_module":  # Игнорируем сами себя
-                continue
-            status = info.get('status')
-            if status != 1:
-                all_status_ok = False
-                break
-        return all_status_ok
-    else:
-        print(f"Ошибка запроса: {response.status_code}")
+    try:
+        if response.status_code == 200:
+            data = response.json()
+            # Проверяем статус всех модулей, кроме voperator_module
+            return all(
+                info.get('status') == 1
+                for module, info in data.items()
+                if module != "voperator_module"
+            )
+        return False
+    except Exception as e:
+        print(f"Ошибка при проверке статуса: {e}")
         return False
 
-# Пример использования
-result = get_cm_health()
-print("Все модули в порядке:", result)
+
+def add_new_car(uNumber, model_id, storage_id, VIN, year, customer, manager, x=0, y=0, disable_virtual_operator=0):
+    payload = {
+        "uNumber": uNumber,
+        "model_id": model_id,
+        "storage_id": storage_id,
+        "VIN": VIN,
+        "year": year,
+        "customer": customer,
+        "manager": manager,
+        "x": x,
+        "y": y,
+        "disable_virtual_operator": disable_virtual_operator
+    }
+
+    try:
+        response = requests.post(ADD_CAR_URL, json=payload, headers=HEADERS)
+        if response.status_code == 200:
+            return "ok"
+        else:
+            return f"Error: {response.status_code}"
+    except Exception as e:
+        return f"Error: {str(e)}"
