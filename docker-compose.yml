@@ -7,6 +7,8 @@ services:
       - .:/ref
     environment:
       SQLALCHEMY_DATABASE_URL: ${SQLALCHEMY_DATABASE_URL}
+      CM_API_URL: ${CM_API_URL}
+      CM_API_KEY: ${CM_API_KEY}
     stdin_open: true
     tty: true
     restart: always
