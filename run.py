@@ -204,7 +204,7 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
             distance = calculate_distance(transport_cord, wialon_cords)
             if distance > danger_distance:
                 trigger_distance = True
-                trigger_distance_value = danger_distance
+                trigger_distance_value = distance
 
     if in_ignored_storage:
         trigger_distance=False
