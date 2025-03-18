@@ -115,6 +115,9 @@ def trigger_handler(uNumber, trigger_closeAll=False,
         if not search_alert(uNumber, 'distance'):
             if trigger_distance_value:
                 create_alert(uNumber, 'distance', trigger_distance_value)
+        else:
+            if trigger_distance_value:
+                alert_update(uNumber, 'distance', trigger_distance_value)
     else:
         close_alert(uNumber, 'distance')
 
