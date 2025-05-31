@@ -12,7 +12,7 @@ HEADERS = {
     'X-API-KEY': CM_API_KEY
 }
 
-response = requests.get(HEALTH_URL, headers=HEADERS)
+response = requests.get(HEALTH_URL, headers=HEADERS, verify=False)
 
 
 def get_cm_health():
