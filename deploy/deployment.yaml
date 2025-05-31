@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: virtual-operator
+  namespace: prd-cm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: virtual-operator
+  template:
+    metadata:
+      labels:
+        app: virtual-operator
+    spec:
+      containers:
+        - name: virtual-operator
+          image: ghcr.io/kirapixel/cm-virtual-operator:0
+          envFrom:
+            - secretRef:
+                name: flask-cm-spectr-secret

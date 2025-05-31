@@ -22,4 +22,4 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Определяем команду для запуска
-CMD ["python", "run.py"]
+CMD ["python", "-u" ,"run.py"]
