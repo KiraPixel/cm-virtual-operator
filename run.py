@@ -154,7 +154,7 @@ def trigger_handler(uNumber,
     if trigger_no_docs_cords:
         if not search_alert(uNumber, 'no_docs_cords'):
             if trigger_no_docs_cords:
-                create_alert(uNumber, 'no_docs_cords', 'no_docs_cords')
+                create_alert(uNumber, 'no_docs_cords', '1C')
     else:
         close_alert(uNumber, 'no_docs_cords')
 
