@@ -91,6 +91,14 @@ class IgnoredStorage(Base):
     radius = Column(Integer, nullable=False)
 
 
+class SystemSettings(Base):
+    __tablename__ = 'system_settings'
+    id = Column(Integer, primary_key=True)
+    enable_voperator = Column(Integer)
+    enable_xml_parser = Column(Integer)
+    enable_db_cashing = Column(Integer)
+
+
 # Индекс для поля uNumber в Transport
 Index('idx_transport_unumber', Transport.uNumber)
 

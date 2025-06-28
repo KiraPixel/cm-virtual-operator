@@ -3,12 +3,12 @@ import sys
 import time
 
 import schedule
-from sqlalchemy import case
 
 from api_cm import get_cm_health
-from models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage, AlertTypePresets
+from models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage, AlertTypePresets, \
+    SystemSettings
 from location_module import calculate_distance
-from system_status_manager import get_status as get_db_status
+
 
 
 # Создаем engine и сессию
@@ -173,9 +173,6 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
     trigger_not_work_value = None
     in_ignored_storage = False
 
-    while get_db_status('db') == 1:
-        time.sleep(1)
-
     wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
     if wialon is not None:
         wialon_cords = wialon.pos_y, wialon.pos_x
@@ -271,12 +268,8 @@ def process_transports():
 
     print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     start_time = time.time()
-    if get_db_status('db') != 1:
-        close_invalid_alerts()
 
     for transport in transports:
-        while get_db_status('db') == 1:
-            time.sleep(1)
         uNumber = transport.uNumber
         in_parser_1c = transport.parser_1c
         transport_cord = None
@@ -293,15 +286,25 @@ def process_transports():
     print("\nОбработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     print(f"Время обработки: {end_time - start_time:.2f} секунд")
 
+def check_status():
+    try:
+        result = session.query(SystemSettings).filter(SystemSettings.id == 0).first()
+        session.close()
+        return result.enable_voperator
+    except Exception as e:
+        print('Ошибка подключения к БД', e)
+        return 0
 
 # Расписание задач
 schedule.every(5).minutes.do(process_transports)  # Выполнять process_transports() каждые 5 минут
 
+
 if __name__ == "__main__":
-    print("Начинаю работу и запускаю первый прогон")
-    process_transports()
     print("Запуск планировщика задач...")
     while True:
-        schedule.run_pending()
-        time.sleep(1)  # Задержка, чтобы не перегружать процессор
-
+        if check_status() == 0:
+            print('Модуль отключен. Ожидание 100 секунд')
+            time.sleep(100)
+        else:
+            process_transports()
+            time.sleep(2)
