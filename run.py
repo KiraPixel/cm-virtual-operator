@@ -240,6 +240,9 @@ def get_enable_alert_list(transport):
     transport_preset = session.query(AlertTypePresets).filter(AlertTypePresets.id == transport.alert_preset).first()
     if not transport_preset:
         return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work  # Возвращаем пресет по умолчанию, если пресет транспорта не найден
+    elif transport_preset.active == 0:
+        return json.dumps(
+            enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work  # Возвращаем пресет по умолчанию, если пресет не активный
 
     # Переобразуем кастомные пресеты в json
     disable_alert_types = json.loads(transport_preset.disable_alert_types) if transport_preset.disable_alert_types else []
