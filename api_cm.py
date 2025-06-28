@@ -6,16 +6,11 @@ import os
 
 BASE_URL = os.getenv('CM_API_URL', '')
 CM_API_KEY = os.getenv('CM_API_KEY', '')
-
-HEALTH_URL = f"{BASE_URL}health"
-ADD_CAR_URL = f"{BASE_URL}parser/add_new_car"
-
 HEADERS = {
     'accept': 'application/json',
     'X-API-KEY': CM_API_KEY
 }
-
-response = requests.get(HEALTH_URL, headers=HEADERS, verify=False)
+response = requests.get(f"{BASE_URL}health", headers=HEADERS, verify=False)
 
 
 def get_cm_health():
@@ -34,7 +29,7 @@ def get_cm_health():
         return False
 
 
-def add_new_car(uNumber, model_id, storage_id, VIN, year, customer, manager, x=0, y=0, disable_virtual_operator=0):
+def add_new_car(uNumber, model_id, storage_id, VIN, year, customer, manager, x=0, y=0, parser_1c=0):
     payload = {
         "uNumber": uNumber,
         "model_id": model_id,
@@ -45,11 +40,11 @@ def add_new_car(uNumber, model_id, storage_id, VIN, year, customer, manager, x=0
         "manager": manager,
         "x": x,
         "y": y,
-        "disable_virtual_operator": disable_virtual_operator
+        "parser_1c": parser_1c
     }
 
     try:
-        response = requests.post(ADD_CAR_URL, json=payload, headers=HEADERS)
+        response = requests.post(f"{BASE_URL}parser/add_new_car", json=payload, headers=HEADERS)
         if response.status_code == 200:
             return "ok"
         else:
