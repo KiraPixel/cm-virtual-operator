@@ -41,6 +41,7 @@ def close_alert(uNumber, type):
     alert = session.query(Alert).filter_by(uNumber=uNumber, type=type, status=0).first()
     if alert:
         alert.status = 1
+        alert.date_closed = int(time.time())
         session.commit()
 
 

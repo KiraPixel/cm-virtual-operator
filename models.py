@@ -26,6 +26,7 @@ class Alert(Base):
     __tablename__ = 'alert'
     id = Column(Integer, primary_key=True, autoincrement=True)
     date = Column(Integer, nullable=False, default=0)
+    date_closed = Column(Integer, nullable=True)
     uNumber = Column(Text, nullable=False)
     type = Column(Text, nullable=False)
     data = Column(Text, nullable=False)
