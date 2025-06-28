@@ -1,10 +1,12 @@
+import json
 import sys
 import time
 
 import schedule
+from sqlalchemy import case
 
 from api_cm import get_cm_health
-from models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage
+from models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage, AlertTypePresets
 from location_module import calculate_distance
 from system_status_manager import get_status as get_db_status
 
@@ -75,7 +77,8 @@ def close_invalid_alerts():
         print("Нет алертов для закрытия для несуществующих uNumber..")
 
 
-def trigger_handler(uNumber, trigger_closeAll=False,
+def trigger_handler(uNumber,
+                    enable_alert_list,
                     trigger_distance=False, trigger_distance_value=None,
                     trigger_gps=False, trigger_gps_value=None,
                     trigger_no_equipment=False, trigger_no_equipment_value=None,
@@ -86,19 +89,24 @@ def trigger_handler(uNumber, trigger_closeAll=False,
     # логика готова только для виалона
     # в ином случае будет жопа :) sry
 
-    if trigger_closeAll:
-        close_alert(uNumber, 'distance')
-        close_alert(uNumber, 'gps')
-        close_alert(uNumber, 'no_equipment')
-        close_alert(uNumber, 'no_docs_cords')
-        close_alert(uNumber, 'not_work')
-        return
+    # перезаписываем на основании шаблона
+    if 'distance' not in enable_alert_list:
+        trigger_distance=False
+    if 'gps' not in enable_alert_list:
+        trigger_gps = False
+    if 'no_equipment' not in enable_alert_list:
+        trigger_no_equipment = False
+    if 'no_docs_cords' not in enable_alert_list:
+        trigger_no_docs_cords = False
+    if 'not_work' not in enable_alert_list:
+        trigger_not_work = False
 
     # поправляем триггеры
-    if trigger_no_equipment:
-        trigger_distance = False
-        trigger_gps = False
-        trigger_not_work = False
+    if "no_equipment":
+        if trigger_no_equipment:
+            trigger_distance = False
+            trigger_gps = False
+            trigger_not_work = False
 
     if trigger_not_work:
         trigger_distance = False
@@ -151,10 +159,8 @@ def trigger_handler(uNumber, trigger_closeAll=False,
 
 
 
-def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_1c, ignored_storages):
+def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work):
     """отрабатываем часть wialon"""
-
-    trigger_closeAll = False
     trigger_distance = False
     trigger_distance_value = None
     trigger_no_docs_cords = False
@@ -164,7 +170,6 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
     trigger_no_equipment_value = None
     trigger_not_work = False
     trigger_not_work_value = None
-
     in_ignored_storage = False
 
     while get_db_status('db') == 1:
@@ -175,17 +180,14 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
         wialon_cords = wialon.pos_y, wialon.pos_x
     else:
         wialon_cords = None
-    danger_distance = 5  # дистанция в км, которую мы считаем опасной
-
-    if disable_virtual_operator == 1:
-        trigger_closeAll = True
+    danger_distance = wialon_danger_distance
 
     if not wialon:
         trigger_no_equipment = True
         trigger_no_equipment_value = 'Wialon'
     else:
 
-        if time.time() - wialon.last_time > 72 * 3600 or wialon.last_time == 0:
+        if time.time() - wialon.last_time > wialon_danger_hours_not_work * 3600 or wialon.last_time == 0:
                 trigger_not_work = True
                 trigger_not_work_value = 'Wialon'
 
@@ -213,8 +215,9 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
         trigger_distance=False
         trigger_no_docs_cords=False
 
+
     trigger_handler(uNumber,
-                    trigger_closeAll=trigger_closeAll,
+                    enable_alert_list=enable_alert_list,
                     trigger_no_equipment=trigger_no_equipment, trigger_no_equipment_value=trigger_no_equipment_value,
                     trigger_not_work=trigger_not_work, trigger_not_work_value=trigger_not_work_value,
                     trigger_gps=trigger_gps, trigger_gps_value=trigger_gps_value,
@@ -222,6 +225,34 @@ def process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_
                     trigger_distance=trigger_distance, trigger_distance_value=trigger_distance_value)
 
 
+def get_enable_alert_list(transport):
+    default_preset_id = 1 if transport.parser_1c == 1 else 0
+    default_preset = session.query(AlertTypePresets).filter(AlertTypePresets.id == default_preset_id).first()
+
+    # Получаем пресет по умолчанию
+    enable_alert_list = json.loads(default_preset.enable_alert_types)
+    if transport.alert_preset is None:
+        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work
+
+    # Получаем данные из пресета транспорта
+    if transport.alert_preset is None:
+        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work # Возвращаем пресет по умолчанию, если кастомного пресета нет
+
+    # Находим кастомный пресет
+    transport_preset = session.query(AlertTypePresets).filter(AlertTypePresets.id == transport.alert_preset).first()
+    if not transport_preset:
+        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work  # Возвращаем пресет по умолчанию, если пресет транспорта не найден
+
+    # Переобразуем кастомные пресеты в json
+    disable_alert_types = json.loads(transport_preset.disable_alert_types) if transport_preset.disable_alert_types else []
+    transport_enable_alert_types = json.loads(transport_preset.enable_alert_types) if transport_preset.enable_alert_types else []
+
+    # Удаляем из enable_alert_list все disable_alert_types
+    enable_alert_list = [alert_type for alert_type in enable_alert_list if alert_type not in disable_alert_types]
+    # Добавляем все enable_alert_types из пресета транспорта
+    enable_alert_list.extend([alert_type for alert_type in transport_enable_alert_types if alert_type not in enable_alert_list])
+
+    return json.dumps(enable_alert_list), transport_preset.wialon_danger_distance, transport_preset.wialon_danger_hours_not_work
 
 
 def process_transports():
@@ -246,16 +277,16 @@ def process_transports():
         while get_db_status('db') == 1:
             time.sleep(1)
         uNumber = transport.uNumber
-        disable_virtual_operator = transport.disable_virtual_operator
         in_parser_1c = transport.parser_1c
         transport_cord = None
-
+        enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work = get_enable_alert_list(transport)
+        enable_alert_list = json.loads(enable_alert_list)
         if transport.x != 0 and transport.y != 0:
             transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона
         if transport.x is None or transport.y is None:
             transport_cord = None, None
 
-        process_wialon(uNumber, transport_cord, disable_virtual_operator, in_parser_1c, ignored_storages)
+        process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work)
 
     end_time = time.time()
     print("\nОбработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))

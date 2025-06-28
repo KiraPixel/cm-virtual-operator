@@ -13,10 +13,9 @@ class Transport(Base):
     model_id = Column(Integer, ForeignKey('transport_model.id'), nullable=False)
     uNumber = Column(Text)
     vin = Column(Text)
-    equipment = Column(JSON)
     x = Column(Float)
     y = Column(Float)
-    disable_virtual_operator = Column(Integer)
+    alert_preset = Column(Integer)
     parser_1c = Column(Integer)
 
     def __repr__(self):
@@ -34,6 +33,18 @@ class Alert(Base):
 
     def __repr__(self):
         return f'<Alert {self.uNumber}, Type: {self.type}>'
+
+
+class AlertTypePresets(Base):
+    __tablename__ = 'alerts_type_presets'
+    id = Column(Text(255), primary_key=True, autoincrement=True)
+    preset_name =Column(Text, nullable=False)
+    enable_alert_types = Column(Text)
+    disable_alert_types = Column(Text)
+    wialon_danger_distance = Column(Integer)
+    wialon_danger_hours_not_work = Column(Integer)
+    active = Column(Integer, nullable=False, default=1)
+    editable = Column(Integer, nullable=False, default=1)
 
 
 class CashCesar(Base):
