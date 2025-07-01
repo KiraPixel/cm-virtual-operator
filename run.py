@@ -180,6 +180,10 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
         wialon_cords = None
     danger_distance = wialon_danger_distance
 
+    if transport_cord is None:
+        if in_parser_1c:
+            trigger_no_docs_cords = True
+
     if not wialon:
         trigger_no_equipment = True
         trigger_no_equipment_value = 'Wialon'
@@ -198,10 +202,6 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
                 distance_to_storage = calculate_distance(storage_cords, wialon_cords)
                 if distance_to_storage <= storage.radius:
                     in_ignored_storage = True
-
-        if transport_cord is None:
-            if in_parser_1c:
-                trigger_no_docs_cords = True
 
         if transport_cord is not None and wialon_cords is not None:
             distance = calculate_distance(transport_cord, wialon_cords)
