@@ -1,4 +1,5 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, JSON, ForeignKey, Float, Boolean, Index
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, JSON, ForeignKey, Float, Boolean, Index, \
+    column
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 import config
@@ -20,6 +21,21 @@ class Transport(Base):
 
     def __repr__(self):
         return f'<Transport {self.uNumber}>'
+
+
+class Storage(Base):
+    __tablename__ = 'storage'
+
+    ID = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    type = Column(String(100))
+    region = Column(String(100))
+    address = Column(String(100))
+    organization = Column(String(100))
+    home_storage = Column(Integer)
+
+    def __repr__(self):
+        return '<Storage %r>' % self.name
 
 
 class Alert(Base):
