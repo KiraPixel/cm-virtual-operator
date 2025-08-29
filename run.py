@@ -172,7 +172,7 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
     trigger_not_work = False
     trigger_not_work_value = None
     in_ignored_storage = False
-    in_home_storage = False
+    in_home_storage = home_storage
 
     wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
     if wialon is not None:
