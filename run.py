@@ -290,8 +290,8 @@ def process_transports():
         process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work, home_storage)
 
     end_time = time.time()
-    print("\nОбработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    print(f"Время обработки: {end_time - start_time:.2f} секунд")
+    print("Обработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    print(f"Время обработки: {end_time - start_time:.2f} секунд\n")
 
 def check_status():
     try:
