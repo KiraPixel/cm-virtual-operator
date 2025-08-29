@@ -269,7 +269,7 @@ def process_transports():
         return
 
     # Получаем все транспортные средства
-    transports = session.query(Transport, Storage).join(Storage, Transport.storage_id == Storage.ID)
+    transports = session.query(Transport, Storage).join(Storage, Transport.storage_id == Storage.ID).all()
     ignored_storages = session.query(IgnoredStorage).all()
 
     print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
