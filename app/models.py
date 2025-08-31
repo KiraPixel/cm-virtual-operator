@@ -1,8 +1,8 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, JSON, ForeignKey, Float, Boolean, Index, \
-    column
+import os
+
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, Float, Boolean, Index
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
-import config
+from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
 
@@ -121,7 +121,7 @@ Index('idx_transport_unumber', Transport.uNumber)
 
 def get_engine():
     """Возвращает объект engine для базы данных"""
-    return create_engine(config.SQLALCHEMY_DATABASE_URL)
+    return create_engine(os.getenv('SQLALCHEMY_DATABASE_URL', 'sqlite:///default.db'))
 
 
 def create_db():
