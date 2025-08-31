@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: virtual-operator
-          image: ghcr.io/kirapixel/cm-virtual-operator:20250829174718
+          image: ghcr.io/kirapixel/cm-virtual-operator:20250831131514
           envFrom:
             - secretRef:
                 name: flask-cm-spectr-secret
