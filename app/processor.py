@@ -170,7 +170,7 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
     in_ignored_storage = False
     in_home_storage = home_storage
 
-    wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%"), CashWialon.valid_nav==1).first()
+    wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
     if wialon is not None:
         wialon_cords = wialon.pos_y, wialon.pos_x
     else:
@@ -212,6 +212,9 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
 
     if in_home_storage and wialon is None:
         trigger_no_docs_cords = False
+
+    if wialon.valid_nav==0:
+        trigger_distance=False
 
     trigger_handler(uNumber,
                     enable_alert_list=enable_alert_list,
