@@ -213,8 +213,9 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
     if in_home_storage and wialon is None:
         trigger_no_docs_cords = False
 
-    if wialon.valid_nav==0:
-        trigger_distance=False
+    if wialon is not None:
+        if wialon.valid_nav==0:
+            trigger_distance=False
 
     trigger_handler(uNumber,
                     enable_alert_list=enable_alert_list,
