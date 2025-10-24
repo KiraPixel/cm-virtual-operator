@@ -5,7 +5,7 @@ import schedule
 
 from app.api_cm import get_cm_health
 from app.models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage, AlertTypePresets, \
-    SystemSettings, Storage
+    SystemSettings, Storage, CashCesar
 from app.location_module import calculate_distance
 
 # Создаем engine и сессию
@@ -156,7 +156,19 @@ def trigger_handler(uNumber,
 
 
 
-def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work, home_storage):
+def process_wialon(transport, storage, ignored_storages, wialon):
+    uNumber = transport.uNumber
+    in_parser_1c = transport.parser_1c
+    enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work = get_enable_alert_list(transport)
+    enable_alert_list = json.loads(enable_alert_list)
+
+    transport_cord = None
+    if transport.x != 0 and transport.y != 0:
+        transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона //todo переделать
+    if transport.x is None or transport.y is None:
+        transport_cord = None, None
+    home_storage = storage.home_storage
+
     """отрабатываем часть wialon"""
     trigger_distance = False
     trigger_distance_value = None
@@ -170,7 +182,6 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
     in_ignored_storage = False
     in_home_storage = home_storage
 
-    wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{uNumber}%")).first()
     if wialon is not None:
         wialon_cords = wialon.pos_y, wialon.pos_x
     else:
@@ -216,6 +227,7 @@ def process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enab
     if wialon is not None:
         if wialon.valid_nav==0:
             trigger_distance=False
+            trigger_no_docs_cords=False
 
     trigger_handler(uNumber,
                     enable_alert_list=enable_alert_list,
@@ -269,25 +281,17 @@ def process_transports():
         return
 
     # Получаем все транспортные средства
-    transports = session.query(Transport, Storage).join(Storage, Transport.storage_id == Storage.ID).all()
+    transports = session.query(Transport, Storage, CashWialon, CashCesar) \
+        .join(Storage, Transport.storage_id == Storage.ID) \
+        .all()
+                  # //todo добавить axenta
     ignored_storages = session.query(IgnoredStorage).all()
 
     print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     start_time = time.time()
 
-    for transport, storage  in transports:
-        uNumber = transport.uNumber
-        in_parser_1c = transport.parser_1c
-        transport_cord = None
-        enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work = get_enable_alert_list(transport)
-        enable_alert_list = json.loads(enable_alert_list)
-        if transport.x != 0 and transport.y != 0:
-            transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона
-        if transport.x is None or transport.y is None:
-            transport_cord = None, None
-        home_storage = storage.home_storage
-
-        process_wialon(uNumber, transport_cord, in_parser_1c, ignored_storages, enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work, home_storage)
+    for transport, storage, wialon, cesar in transports:
+        process_wialon(transport, storage, ignored_storages, wialon)
 
     end_time = time.time()
     print("Обработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
