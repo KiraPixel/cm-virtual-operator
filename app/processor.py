@@ -281,7 +281,7 @@ def process_transports():
         return
 
     # Получаем все транспортные средства
-    transports = session.query(Transport, Storage, CashWialon, CashCesar) \
+    transports = session.query(Transport, Storage) \
         .join(Storage, Transport.storage_id == Storage.ID) \
         .all()
                   # //todo добавить axenta
@@ -290,7 +290,8 @@ def process_transports():
     print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     start_time = time.time()
 
-    for transport, storage, wialon, cesar in transports:
+    for transport, storage in transports:
+        wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{transport.uNumber}%")).first()
         process_wialon(transport, storage, ignored_storages, wialon)
 
     end_time = time.time()
