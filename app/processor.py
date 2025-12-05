@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 
 import schedule
@@ -11,6 +12,8 @@ from app.location_module import calculate_distance
 # Создаем engine и сессию
 engine = get_engine()
 session = create_session(engine)
+
+logger = logging.getLogger('cm_virtual_operator')
 
 def create_alert(uNumber, type, data):
     """Создает новый алерт"""
@@ -69,9 +72,9 @@ def close_invalid_alerts():
             for alert in alerts_to_close:
                 alert.status = 1
             session.commit()
-        print(f"Закрыто {len(invalid_uNumbers)} алертов для несуществующих uNumber.")
+        logger.info(f"Закрыто {len(invalid_uNumbers)} алертов для несуществующих uNumber.")
     else:
-        print("Нет алертов для закрытия для несуществующих uNumber..")
+        logger.info("Нет алертов для закрытия для несуществующих uNumber..")
 
 
 def trigger_handler(uNumber,
@@ -275,8 +278,8 @@ def process_transports():
     """Основная функция для обработки данных транспортных средств"""
 
     if not get_cm_health():
-        print("Приложите подорожник к ЦМ")
-        print("Фрижу задачу на час")
+        logger.info("Приложите подорожник к ЦМ")
+        logger.info("Фрижу задачу на час")
         time.sleep(600)
         return
 
@@ -287,7 +290,7 @@ def process_transports():
                   # //todo добавить axenta
     ignored_storages = session.query(IgnoredStorage).all()
 
-    print("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    logger.info("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     start_time = time.time()
 
     for transport, storage in transports:
@@ -295,8 +298,8 @@ def process_transports():
         process_wialon(transport, storage, ignored_storages, wialon)
 
     end_time = time.time()
-    print("Обработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    print(f"Время обработки: {end_time - start_time:.2f} секунд\n")
+    logger.info("Обработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    logger.info(f"Время обработки: {end_time - start_time:.2f} секунд\n")
 
 
 def check_status():
@@ -305,5 +308,5 @@ def check_status():
         session.close()
         return result.enable_voperator
     except Exception as e:
-        print('Ошибка подключения к БД', e)
+        logger.info('Ошибка подключения к БД', e)
         return 0
