@@ -290,7 +290,7 @@ def process_transports():
                   # //todo добавить axenta
     ignored_storages = session.query(IgnoredStorage).all()
 
-    logger.info("Начало обработки:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    logger.info(f'Начало обработки: {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}')
     start_time = time.time()
 
     for transport, storage in transports:
@@ -298,8 +298,8 @@ def process_transports():
         process_wialon(transport, storage, ignored_storages, wialon)
 
     end_time = time.time()
-    logger.info("Обработка завершена:", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    logger.info(f"Время обработки: {end_time - start_time:.2f} секунд\n")
+    logger.info(f'Обработка завершена: {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}')
+    logger.info(f"Время обработки: {end_time - start_time:.2f} секунд")
 
 
 def check_status():
