@@ -5,7 +5,7 @@ import time
 import schedule
 
 from app.api_cm import get_cm_health
-from app.models import create_session, get_engine, Transport, Alert, CashWialon, IgnoredStorage, AlertTypePresets, \
+from app.models import create_session, get_engine, Transport, Alert, CashAxenta, IgnoredStorage, AlertTypePresets, \
     SystemSettings, Storage, CashCesar
 from app.location_module import calculate_distance
 
@@ -159,7 +159,7 @@ def trigger_handler(uNumber,
 
 
 
-def process_wialon(transport, storage, ignored_storages, wialon):
+def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
     uNumber = transport.uNumber
     in_parser_1c = transport.parser_1c
     enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work = get_enable_alert_list(transport)
@@ -167,12 +167,12 @@ def process_wialon(transport, storage, ignored_storages, wialon):
 
     transport_cord = None
     if transport.x != 0 and transport.y != 0:
-        transport_cord = transport.x, transport.y  # переворачиваем корды, ибо это баг виалона //todo переделать
+        transport_cord = transport.x, transport.y
     if transport.x is None or transport.y is None:
         transport_cord = None, None
     home_storage = storage.home_storage
 
-    """отрабатываем часть wialon"""
+    """отрабатываем часть axenta"""
     trigger_distance = False
     trigger_distance_value = None
     trigger_no_docs_cords = False
@@ -185,37 +185,40 @@ def process_wialon(transport, storage, ignored_storages, wialon):
     in_ignored_storage = False
     in_home_storage = home_storage
 
-    if wialon is not None:
-        wialon_cords = wialon.pos_y, wialon.pos_x
+    if axenta is not None:
+        if axenta.pos_x is None or axenta.pos_y is None:
+            axenta_cords = None
+        else:
+            axenta_cords = axenta.pos_x, axenta.pos_y
     else:
-        wialon_cords = None
+        axenta_cords = None
     danger_distance = wialon_danger_distance
 
     if transport_cord is None:
         if in_parser_1c:
             trigger_no_docs_cords = True
 
-    if not wialon:
+    if not axenta:
         trigger_no_equipment = True
-        trigger_no_equipment_value = 'Wialon'
+        trigger_no_equipment_value = 'Axenta'
     else:
 
-        if time.time() - wialon.last_time > wialon_danger_hours_not_work * 3600 or wialon.last_time == 0:
+        if time.time() - axenta.last_time > wialon_danger_hours_not_work * 3600 or axenta.last_time == 0:
                 trigger_not_work = True
-                trigger_not_work_value = 'Wialon'
+                trigger_not_work_value = 'Axenta'
 
-        if wialon.pos_y == 0 or wialon.pos_x == 0:
+        if axenta.pos_y == 0 or axenta.pos_x == 0 or axenta_cords is None:
             trigger_gps = True
-            trigger_gps_value = 'Wialon'
+            trigger_gps_value = 'Axenta'
         else:
             for storage in ignored_storages:
                 storage_cords = (storage.pos_x, storage.pos_y)
-                distance_to_storage = calculate_distance(storage_cords, wialon_cords)
+                distance_to_storage = calculate_distance(storage_cords, axenta_cords)
                 if distance_to_storage <= storage.radius:
                     in_ignored_storage = True
 
-        if transport_cord is not None and wialon_cords is not None:
-            distance = calculate_distance(transport_cord, wialon_cords)
+        if transport_cord is not None and axenta_cords is not None:
+            distance = calculate_distance(transport_cord, axenta_cords)
             if distance > danger_distance:
                 trigger_distance = True
                 trigger_distance_value = distance
@@ -224,11 +227,11 @@ def process_wialon(transport, storage, ignored_storages, wialon):
         trigger_distance=False
         trigger_no_docs_cords=False
 
-    if in_home_storage and wialon is None:
+    if in_home_storage and axenta is None:
         trigger_no_docs_cords = False
 
-    if wialon is not None:
-        if wialon.valid_nav==0:
+    if axenta is not None:
+        if axenta.valid_nav==0:
             trigger_distance=False
             trigger_no_docs_cords=False
 
@@ -294,8 +297,8 @@ def process_transports():
     start_time = time.time()
 
     for transport, storage in transports:
-        wialon = session.query(CashWialon).filter(CashWialon.nm.like(f"%{transport.uNumber}%")).first()
-        process_wialon(transport, storage, ignored_storages, wialon)
+        axenta = session.query(CashAxenta).filter(CashAxenta.nm.like(f"%{transport.uNumber}%")).first()
+        process_axenta(transport, storage, ignored_storages, axenta)
 
     end_time = time.time()
     logger.info(f'Обработка завершена: {time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())}')
