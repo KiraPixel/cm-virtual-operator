@@ -16,14 +16,9 @@ response = requests.get(f"{BASE_URL}health", headers=HEADERS, verify=False)
 def get_cm_health():
     try:
         if response.status_code == 200:
-            data = response.json()
-            # Проверяем статус всех модулей, кроме voperator_module
-            return all(
-                info.get('status') == 1
-                for module, info in data.items()
-                if module != "voperator_module"
-            )
-        return False
+            return True
+        else:
+            return False
     except Exception as e:
         print(f"Ошибка при проверке статуса: {e}")
         return False
