@@ -18,6 +18,7 @@ class Transport(Base):
     y = Column(Float)
     alert_preset = Column(Integer)
     parser_1c = Column(Integer)
+    jamming_risk = Column(Text(15))
 
     def __repr__(self):
         return f'<Transport {self.uNumber}>'

@@ -83,7 +83,8 @@ def trigger_handler(uNumber,
                     trigger_gps=False, trigger_gps_value=None,
                     trigger_no_equipment=False, trigger_no_equipment_value=None,
                     trigger_no_docs_cords=False,
-                    trigger_not_work=False, trigger_not_work_value=None):
+                    trigger_not_work=False, trigger_not_work_value=None,
+                    trigger_jamming=False, trigger_jamming_value=None,):
 
     # хоть и есть приемники value для триггеров trigger_distance, trigger_no_equipment, trigger_not_work
     # логика готова только для виалона
@@ -119,6 +120,15 @@ def trigger_handler(uNumber,
         trigger_distance = False
 
     # исполняем триггеры
+    if trigger_jamming:
+        if not search_alert(uNumber, 'jamming'):
+            create_alert(uNumber, 'jamming', trigger_jamming_value)
+        else:
+            if trigger_jamming_value:
+                alert_update(uNumber, 'jamming', trigger_jamming_value)
+    else:
+        close_alert(uNumber, 'jamming')
+
     if trigger_distance:
         if not search_alert(uNumber, 'distance'):
             if trigger_distance_value:
@@ -162,6 +172,7 @@ def trigger_handler(uNumber,
 def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
     uNumber = transport.uNumber
     in_parser_1c = transport.parser_1c
+    jamming_risk = transport.jamming_risk
     enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work = get_enable_alert_list(transport)
     enable_alert_list = json.loads(enable_alert_list)
 
@@ -173,6 +184,7 @@ def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
     home_storage = storage.home_storage
 
     """отрабатываем часть axenta"""
+    trigger_jamming = False
     trigger_distance = False
     trigger_distance_value = None
     trigger_no_docs_cords = False
@@ -184,6 +196,9 @@ def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
     trigger_not_work_value = None
     in_ignored_storage = False
     in_home_storage = home_storage
+
+    if jamming_risk in ('high','extra'):
+        trigger_jamming = True
 
     if axenta is not None:
         if axenta.pos_x is None or axenta.pos_y is None:
@@ -241,7 +256,8 @@ def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
                     trigger_not_work=trigger_not_work, trigger_not_work_value=trigger_not_work_value,
                     trigger_gps=trigger_gps, trigger_gps_value=trigger_gps_value,
                     trigger_no_docs_cords=trigger_no_docs_cords,
-                    trigger_distance=trigger_distance, trigger_distance_value=trigger_distance_value)
+                    trigger_distance=trigger_distance, trigger_distance_value=trigger_distance_value,
+                    trigger_jamming=trigger_jamming, trigger_jamming_value=transport.jamming_risk,)
 
 
 def get_enable_alert_list(transport):
