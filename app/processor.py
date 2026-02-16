@@ -103,14 +103,18 @@ def trigger_handler(uNumber,
         trigger_not_work = False
 
     # поправляем триггеры
-    if "no_equipment":
-        if trigger_no_equipment:
-            trigger_distance = False
-            trigger_gps = False
-            trigger_not_work = False
+    if trigger_no_equipment:
+        trigger_distance = False
+        trigger_gps = False
+        trigger_not_work = False
 
     if trigger_not_work:
         trigger_distance = False
+        trigger_gps = False
+
+    if trigger_jamming:
+        trigger_distance = False
+        trigger_no_docs_cords = False
         trigger_gps = False
 
     if trigger_gps:
@@ -173,7 +177,7 @@ def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
     uNumber = transport.uNumber
     in_parser_1c = transport.parser_1c
     jamming_risk = transport.jamming_risk
-    enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work = get_enable_alert_list(transport)
+    enable_alert_list, wialon_danger_distance, wialon_danger_hours_not_work, work_in_jamming_zone = get_enable_alert_list(transport)
     enable_alert_list = json.loads(enable_alert_list)
 
     transport_cord = None
@@ -185,6 +189,7 @@ def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
 
     """отрабатываем часть axenta"""
     trigger_jamming = False
+    trigger_jamming_value = None
     trigger_distance = False
     trigger_distance_value = None
     trigger_no_docs_cords = False
@@ -197,8 +202,12 @@ def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
     in_ignored_storage = False
     in_home_storage = home_storage
 
-    if jamming_risk in ('high','extra'):
+    if jamming_risk in ('high','extra') or work_in_jamming_zone:
         trigger_jamming = True
+        if work_in_jamming_zone:
+            trigger_jamming_value = 'custom'
+        else:
+            trigger_jamming_value = jamming_risk
 
     if axenta is not None:
         if axenta.pos_x is None or axenta.pos_y is None:
@@ -257,7 +266,7 @@ def process_axenta(transport, storage, ignored_storages, axenta: CashAxenta):
                     trigger_gps=trigger_gps, trigger_gps_value=trigger_gps_value,
                     trigger_no_docs_cords=trigger_no_docs_cords,
                     trigger_distance=trigger_distance, trigger_distance_value=trigger_distance_value,
-                    trigger_jamming=trigger_jamming, trigger_jamming_value=transport.jamming_risk,)
+                    trigger_jamming=trigger_jamming, trigger_jamming_value=trigger_jamming_value,)
 
 
 def get_enable_alert_list(transport):
@@ -267,19 +276,19 @@ def get_enable_alert_list(transport):
     # Получаем пресет по умолчанию
     enable_alert_list = json.loads(default_preset.enable_alert_types)
     if transport.alert_preset is None:
-        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work
+        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work, default_preset.jamming_zone
 
     # Получаем данные из пресета транспорта
     if transport.alert_preset is None:
-        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work # Возвращаем пресет по умолчанию, если кастомного пресета нет
+        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work, default_preset.jamming_zone # Возвращаем пресет по умолчанию, если кастомного пресета нет
 
     # Находим кастомный пресет
     transport_preset = session.query(AlertTypePresets).filter(AlertTypePresets.id == transport.alert_preset).first()
     if not transport_preset:
-        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work  # Возвращаем пресет по умолчанию, если пресет транспорта не найден
+        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work, default_preset.jamming_zone  # Возвращаем пресет по умолчанию, если пресет транспорта не найден
+
     elif transport_preset.active == 0:
-        return json.dumps(
-            enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work  # Возвращаем пресет по умолчанию, если пресет не активный
+        return json.dumps(enable_alert_list), default_preset.wialon_danger_distance, default_preset.wialon_danger_hours_not_work, default_preset.jamming_zone  # Возвращаем пресет по умолчанию, если пресет не активный
 
     # Переобразуем кастомные пресеты в json
     disable_alert_types = json.loads(transport_preset.disable_alert_types) if transport_preset.disable_alert_types else []
@@ -289,8 +298,7 @@ def get_enable_alert_list(transport):
     enable_alert_list = [alert_type for alert_type in enable_alert_list if alert_type not in disable_alert_types]
     # Добавляем все enable_alert_types из пресета транспорта
     enable_alert_list.extend([alert_type for alert_type in transport_enable_alert_types if alert_type not in enable_alert_list])
-
-    return json.dumps(enable_alert_list), transport_preset.wialon_danger_distance, transport_preset.wialon_danger_hours_not_work
+    return json.dumps(enable_alert_list), transport_preset.wialon_danger_distance, transport_preset.wialon_danger_hours_not_work, transport_preset.jamming_zone
 
 
 def process_transports():
